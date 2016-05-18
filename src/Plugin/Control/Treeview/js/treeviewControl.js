@@ -583,16 +583,12 @@ Object.observe || (function(O, A, root, _undefined) {
 
 (function($)
 {
-    var layerIndex = null;
     ol.control.treeviewControl = function(opt_options, ol3_map)
     {
-        console.log(ol3_map);
-        
-        Object.observe(ol3_map,mychanges);
         var options = opt_options || {};
         var this_ = this;
         var tipLabel = 'LayerTree';
-        var layertree = this_.bildlayertree(ol3_map);
+        var layertree = this_.buildlayertree(ol3_map);
         
         this.hiddenClassName = 'ol-unselectable ol-control layer-layertree';
         this.shownClassName = this.hiddenClassName + ' shown';
@@ -612,7 +608,7 @@ Object.observe || (function(O, A, root, _undefined) {
         var dialog = document.createElement('div');
         dialog.id = 'legendendialog';
         document.body.appendChild(dialog);
-        
+        Object.observe(ol3_map,this_.layerchanges);
         window.onload = function ()
         {
             $('#treeview').treeview({data: layertree,showCheckbox:true,showOpacity:true,showDeleteIcon:true,showXmlIcon:true,showExtentIcon:true,showLegendIcon:true,olMap:ol3_map});
@@ -662,9 +658,9 @@ Object.observe || (function(O, A, root, _undefined) {
         return array.indexOf(value) > -1;
     };
     
-    ol.control.treeviewControl.prototype.bildlayertree = function (map)
-    {
-        var layers =  map.getLayers();
+    ol.control.treeviewControl.prototype.buildlayertree = function (ol3_map)
+    {   console.log('buildLayertree');
+        var layers =  ol3_map.getLayers();
         var data = [];
         var group = [];
         layers.forEach(function(layer) 
@@ -734,33 +730,33 @@ Object.observe || (function(O, A, root, _undefined) {
     };  
     
     
-    function mychanges(changes)
+     ol.control.treeviewControl.prototype.layerchanges = function (changes)
     {
-        if(typeof map.f != 'undefined')
-        {    
-            console.log('mapf existiert');
-            console.log(map.f);
-            
-//            if(map.f.layerStatesArray.length != layerIndex)
-//            {
-//                console.log(changes);
-//                console.log(map.f);
-//                console.log(map.f.layerStatesArray.length);	
-//                layerIndex = map.f.layerStatesArray.length;
-//            }
-        }
-        if(typeof map.b != 'undefined')
-        {    
-            if(map.b.layerStatesArray.length != layerIndex)
+        changes.forEach(function(entry)
+        {      
+            if(typeof entry.oldValue === 'object' && !(entry.oldValue instanceof Array))
             {
-                console.log('mapb existiert');
-                console.log(changes);
-                console.log(map.b);
-                console.log(map.b.layerStatesArray.length);	
-                layerIndex = map.b.layerStatesArray.length;
+                if(entry.oldValue)
+                {
+                    var sizeOld = Object.size(entry.oldValue.layerStatesArray);
+                    var sizeNew = Object.size(entry.object.f.layerStatesArray);
+                    if(sizeOld !== sizeNew)
+                    {
+                        var id = $('.openlayers-map').attr('id');
+                        var map = Drupal.openlayers.getMapById(id).map;
+                        layertree = ol.control.treeviewControl.prototype.buildlayertree(map);
+                        $('#treeview').treeview({data: layertree,showCheckbox:true,showOpacity:true,showDeleteIcon:true,showXmlIcon:true,showExtentIcon:true,showLegendIcon:true,olMap:map});
+                    }
+                }
             }
-        }
+        });
     };    
-    
+    Object.size = function(obj) {
+    var size = 0, key;
+    for (key in obj) {
+        if (obj.hasOwnProperty(key)) size++;
+    }
+    return size;
+};
 })(jQuery);
 

@@ -715,7 +715,7 @@
 	// Starting from the root node, and recursing down the
 	// structure we build the tree one node at a time
 	Tree.prototype.buildTree = function (nodes, level) {
-                console.log('im build');
+                //console.log('im build');
 		if (!nodes) return;
 		level += 1;
 
@@ -974,7 +974,7 @@
 		@return {Object} node - Matching node
 	*/
 	Tree.prototype.getNode = function (nodeId) {
-                console.log('getNode');
+                //console.log('getNode');
 		return this.nodes[nodeId];
 	};
 
