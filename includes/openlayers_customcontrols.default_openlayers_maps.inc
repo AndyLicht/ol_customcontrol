@@ -36,8 +36,8 @@ function openlayers_customcontrols_default_openlayers_maps() {
       1 => 'openlayers_layer_customcontrols_bkg_webatlas_grey',
       2 => 'openlayers_layer_customcontrols_bkg_webatlas_color',
       3 => 'openlayers_layer_customcontrols_bgr_buek200_polygons',
-        4 => 'openlayers_layer_customcontrols_bgr_buek200_arcs',
-        5 => 'openlayers_layer_customcontrols_bgr_buek200_label',
+      4 => 'openlayers_layer_customcontrols_bgr_buek200_arcs',
+      5 => 'openlayers_layer_customcontrols_bgr_buek200_label',
     ),
     'controls' => array(
       0 => 'openlayers_control_zoom',

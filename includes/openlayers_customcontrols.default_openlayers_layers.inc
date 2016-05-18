@@ -41,7 +41,7 @@ function openlayers_customcontrols_default_openlayers_layers() {
     $ol_layer->factory_service = 'openlayers.Layer:Tile';
     $ol_layer->options = array(
         'source' => 'openlayers_source_bkg_webatlas_grey',
-        'visible' => 1,
+        'visible' => 0,
         'opacity' => 1,
         'base' => true,
         'tree_uid' => '2',
@@ -63,7 +63,7 @@ function openlayers_customcontrols_default_openlayers_layers() {
     $ol_layer->factory_service = 'openlayers.Layer:Tile';
     $ol_layer->options = array(
         'source' => 'openlayers_source_bkg_dop20',
-        'visible' => 1,
+        'visible' => 0,
         'opacity' => 1,
         'base' => true,
         'tree_uid' => '3',
