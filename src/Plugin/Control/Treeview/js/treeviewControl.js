@@ -660,18 +660,13 @@ Object.observe || (function(O, A, root, _undefined) {
     
     ol.control.treeviewControl.prototype.buildlayertree = function (ol3_map,withBaseLayers)
     {   
-        console.log(withBaseLayers);
-        
         var layers =  ol3_map.getLayers();
         var data = [];
         var group = [];
         layers.forEach(function(layer) 
         {
-            console.log(layer);
-            console.log(layer.get('base'));
             if (withBaseLayers === true)
             {
-                console.log('BaseLayers werden mit angezeigt');
                 if(ol.control.treeviewControl.prototype.isInArray(layer.get('tree_group'),group) === false)
                 {
                     group.push(layer.get('tree_group'));
@@ -679,15 +674,12 @@ Object.observe || (function(O, A, root, _undefined) {
             }
             else
             {
-                console.log('BaseLayers werden nicht mit angezeigt');
                 if((layer.get('base') === false) && (ol.control.treeviewControl.prototype.isInArray(layer.get('tree_group'),group) === false))
                 {
                     group.push(layer.get('tree_group'));
                 }
             }
         });
-        console.log('Groups:');
-        console.log(group);
         group.forEach(function(gr)
         {
             if(gr !== 'none')
@@ -710,7 +702,6 @@ Object.observe || (function(O, A, root, _undefined) {
             {
                 if(layer.get('tree_group') !== 'none')
                 {
-                    console.log('bin im if');
                     if(layer.get('tree_group') === gr)
                     {
                         var layerdata = [];
@@ -742,9 +733,6 @@ Object.observe || (function(O, A, root, _undefined) {
                                 }
                             };
                         }
-                        console.log('layerdata:');
-                        console.log(layer);
-                        console.log(layerdata);
                         grdata.nodes.push(layerdata);
                         if(start_checked > 0)
                         {
@@ -754,46 +742,46 @@ Object.observe || (function(O, A, root, _undefined) {
                 }
                 else
                 {
-                    console.log('bin im else');
-                    console.log('layerdata:');
-                        console.log(layer);
+                    if(layer.get('tree_group') === gr)
+                    {
+                        var layerdata = [];
+                        if(layer.getVisible())
+                        {
+                            start_checked++;
+                            layerdata ={
+                                text: layer.get('tree_title'),
+                                val:layer.get('tree_name'),
+                                selectable:false,
+                                uid: layer.get('tree_uid'),
+                                state:
+                                {
+                                    checked:true,
+                                    opacity: layer.getOpacity()
+                                }
+                            };
+                        }
+                        else
+                        {
+                            layerdata ={
+                                text: layer.get('tree_title'),
+                                val:layer.get('tree_name'),
+                                selectable:false,
+                                uid: layer.get('tree_uid'),
+                                state:{
+                                    checked: false,
+                                    opacity: layer.getOpacity()
+                                }
+                            };
+                        }
+                        console.log('layer:');
                         console.log(layerdata);
-                    var layerdata = [];
-                    if(layer.getVisible())
-                    {
-                        start_checked++;
-                        layerdata ={
-                            text: layer.get('tree_title'),
-                            val:layer.get('tree_name'),
-                            selectable:false,
-                            uid: layer.get('tree_uid'),
-                            state:
-                            {
-                                checked:true,
-                                opacity: layer.getOpacity()
-                            }
-                        };
+                        data.push(layerdata);
                     }
-                    else
-                    {
-                        layerdata ={
-                            text: layer.get('tree_title'),
-                            val:layer.get('tree_name'),
-                            selectable:false,
-                            uid: layer.get('tree_uid'),
-                            state:{
-                                checked: false,
-                                opacity: layer.getOpacity()
-                            }
-                        };
-                    }
-                    data.push(layerdata);
                 }
+                console.log('huhu');
             });
-            
             data.push(grdata);
         });
-        console.log(data);
         return data;
     };  
     
@@ -818,7 +806,6 @@ Object.observe || (function(O, A, root, _undefined) {
                     })
                     if(sizeOld < sizeNew)
                     {
-                        console.log('asd');
                         newlayertree = ol.control.treeviewControl.prototype.buildlayertree(map,true);
                         $('#treeview').treeview({data: newlayertree,showCheckbox:true,showOpacity:true,showDeleteIcon:true,showXmlIcon:true,showExtentIcon:true,showLegendIcon:true,olMap:map});
                     }
