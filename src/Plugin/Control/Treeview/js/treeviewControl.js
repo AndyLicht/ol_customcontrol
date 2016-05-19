@@ -588,7 +588,7 @@ Object.observe || (function(O, A, root, _undefined) {
         var options = opt_options || {};
         var this_ = this;
         var tipLabel = 'LayerTree';
-        var layertree = this_.buildlayertree(ol3_map,true);
+        var layertree = this_.buildlayertree(ol3_map,false);
         
         this.hiddenClassName = 'ol-unselectable ol-control layer-layertree';
         this.shownClassName = this.hiddenClassName + ' shown';
@@ -747,7 +747,6 @@ Object.observe || (function(O, A, root, _undefined) {
                         var layerdata = [];
                         if(layer.getVisible())
                         {
-                            start_checked++;
                             layerdata ={
                                 text: layer.get('tree_title'),
                                 val:layer.get('tree_name'),
@@ -773,15 +772,13 @@ Object.observe || (function(O, A, root, _undefined) {
                                 }
                             };
                         }
-                        console.log('layer:');
-                        console.log(layerdata);
                         data.push(layerdata);
                     }
                 }
-                console.log('huhu');
             });
             data.push(grdata);
         });
+        console.log(data);
         return data;
     };  
     
@@ -806,7 +803,7 @@ Object.observe || (function(O, A, root, _undefined) {
                     })
                     if(sizeOld < sizeNew)
                     {
-                        newlayertree = ol.control.treeviewControl.prototype.buildlayertree(map,true);
+                        newlayertree = ol.control.treeviewControl.prototype.buildlayertree(map,false);
                         $('#treeview').treeview({data: newlayertree,showCheckbox:true,showOpacity:true,showDeleteIcon:true,showXmlIcon:true,showExtentIcon:true,showLegendIcon:true,olMap:map});
                     }
                 }
