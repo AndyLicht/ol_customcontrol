@@ -588,7 +588,7 @@ Object.observe || (function(O, A, root, _undefined) {
         var options = opt_options || {};
         var this_ = this;
         var tipLabel = 'LayerTree';
-        var layertree = this_.buildlayertree(ol3_map);
+        var layertree = this_.buildlayertree(ol3_map,true);
         
         this.hiddenClassName = 'ol-unselectable ol-control layer-layertree';
         this.shownClassName = this.hiddenClassName + ' shown';
@@ -658,34 +658,59 @@ Object.observe || (function(O, A, root, _undefined) {
         return array.indexOf(value) > -1;
     };
     
-    ol.control.treeviewControl.prototype.buildlayertree = function (ol3_map)
-    {   console.log('buildLayertree');
+    ol.control.treeviewControl.prototype.buildlayertree = function (ol3_map,withBaseLayers)
+    {   
+        console.log(withBaseLayers);
+        
         var layers =  ol3_map.getLayers();
         var data = [];
         var group = [];
         layers.forEach(function(layer) 
         {
-            if((layer.get('base') === false) && (ol.control.treeviewControl.prototype.isInArray(layer.get('tree_group'),group) === false))
+            console.log(layer);
+            console.log(layer.get('base'));
+            if (withBaseLayers === true)
             {
-                group.push(layer.get('tree_group'));
+                console.log('BaseLayers werden mit angezeigt');
+                if(ol.control.treeviewControl.prototype.isInArray(layer.get('tree_group'),group) === false)
+                {
+                    group.push(layer.get('tree_group'));
+                }
+            }
+            else
+            {
+                console.log('BaseLayers werden nicht mit angezeigt');
+                if((layer.get('base') === false) && (ol.control.treeviewControl.prototype.isInArray(layer.get('tree_group'),group) === false))
+                {
+                    group.push(layer.get('tree_group'));
+                }
             }
         });
+        console.log('Groups:');
+        console.log(group);
         group.forEach(function(gr)
         {
-            var grdata = {
-                text: gr,
-                val:gr,
-                selectable:false,
-                state:
-                        {
-                            checked:false
-                        },
-                nodes:[]
-            };
-
-                var start_checked = 0;
-                layers.forEach(function(layer)
+            if(gr !== 'none')
+            {
+                var grdata = 
                 {
+                    text: gr,
+                    val:gr,
+                    selectable:false,
+                    state:
+                    {
+                        checked:false
+                    },
+                    nodes:[]
+                };
+            }
+
+            var start_checked = 0;
+            layers.forEach(function(layer)
+            {
+                if(layer.get('tree_group') !== 'none')
+                {
+                    console.log('bin im if');
                     if(layer.get('tree_group') === gr)
                     {
                         var layerdata = [];
@@ -717,21 +742,66 @@ Object.observe || (function(O, A, root, _undefined) {
                                 }
                             };
                         }
+                        console.log('layerdata:');
+                        console.log(layer);
+                        console.log(layerdata);
                         grdata.nodes.push(layerdata);
-                    };
-                });
-                if(start_checked > 0)
+                        if(start_checked > 0)
+                        {
+                            grdata.state.checked=true;
+                        };
+                    }    
+                }
+                else
                 {
-                    grdata.state.checked=true;
-                };
-                data.push(grdata);
+                    console.log('bin im else');
+                    console.log('layerdata:');
+                        console.log(layer);
+                        console.log(layerdata);
+                    var layerdata = [];
+                    if(layer.getVisible())
+                    {
+                        start_checked++;
+                        layerdata ={
+                            text: layer.get('tree_title'),
+                            val:layer.get('tree_name'),
+                            selectable:false,
+                            uid: layer.get('tree_uid'),
+                            state:
+                            {
+                                checked:true,
+                                opacity: layer.getOpacity()
+                            }
+                        };
+                    }
+                    else
+                    {
+                        layerdata ={
+                            text: layer.get('tree_title'),
+                            val:layer.get('tree_name'),
+                            selectable:false,
+                            uid: layer.get('tree_uid'),
+                            state:{
+                                checked: false,
+                                opacity: layer.getOpacity()
+                            }
+                        };
+                    }
+                    data.push(layerdata);
+                }
+            });
+            
+            data.push(grdata);
         });
+        console.log(data);
         return data;
     };  
     
     
      ol.control.treeviewControl.prototype.layerchanges = function (changes)
     {
+        var id = $('.openlayers-map').attr('id');
+        var map = Drupal.openlayers.getMapById(id).map;
         changes.forEach(function(entry)
         {      
             if(typeof entry.oldValue === 'object' && !(entry.oldValue instanceof Array))
@@ -739,18 +809,24 @@ Object.observe || (function(O, A, root, _undefined) {
                 if(entry.oldValue)
                 {
                     var sizeOld = Object.size(entry.oldValue.layerStatesArray);
-                    var sizeNew = Object.size(entry.object.f.layerStatesArray);
-                    if(sizeOld !== sizeNew)
+                    //var sizeNew = Object.size(entry.object.f.layerStatesArray);
+                    var sizeNew = 0;
+                    var layers = map.getLayers();
+                    layers.forEach(function(layer)
                     {
-                        var id = $('.openlayers-map').attr('id');
-                        var map = Drupal.openlayers.getMapById(id).map;
-                        layertree = ol.control.treeviewControl.prototype.buildlayertree(map);
-                        $('#treeview').treeview({data: layertree,showCheckbox:true,showOpacity:true,showDeleteIcon:true,showXmlIcon:true,showExtentIcon:true,showLegendIcon:true,olMap:map});
+                        sizeNew++;
+                    })
+                    if(sizeOld < sizeNew)
+                    {
+                        console.log('asd');
+                        newlayertree = ol.control.treeviewControl.prototype.buildlayertree(map,true);
+                        $('#treeview').treeview({data: newlayertree,showCheckbox:true,showOpacity:true,showDeleteIcon:true,showXmlIcon:true,showExtentIcon:true,showLegendIcon:true,olMap:map});
                     }
                 }
             }
         });
-    };    
+    };  
+    
     Object.size = function(obj) {
     var size = 0, key;
     for (key in obj) {

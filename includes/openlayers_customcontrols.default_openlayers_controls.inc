@@ -29,6 +29,19 @@ function openlayers_customcontrols_default_openlayers_controls()
     $ol_control->options = array();
     $export['openlayers_control_alert'] = $ol_control;
     
+    
+    $ol_control = new stdClass();
+    $ol_control->api_version = 1;
+    $ol_control->machine_name = 'openlayers_control_addwms';
+    $ol_control->name = 'AddWMS';
+    $ol_control->description = 'Button to add only one static layer, only for tests';
+    $ol_control->factory_service = 'openlayers.Control:AddWMS';
+    $ol_control->options = array();
+    $export['openlayers_control_addwms'] = $ol_control;
+    
+    
+    
+    
     $ol_control = new stdClass();
     $ol_control->api_version = 1;
     $ol_control->machine_name = 'openlayers_control_wmsloader';
@@ -38,14 +51,14 @@ function openlayers_customcontrols_default_openlayers_controls()
     $ol_control->options = array();
     $export['openlayers_control_wmsloader'] = $ol_control;
     
-    $ol_control = new stdClass();
-    $ol_control->api_version = 1;
-    $ol_control->machine_name = 'openlayers_control_layerloader';
-    $ol_control->name = 'LayerLoader';
-    $ol_control->description = 'load a WMS via Capabilities-URL and a Overlay';
-    $ol_control->factory_service = 'openlayers.Control:LayerLoader';
-    $ol_control->options = array();
-    $export['openlayers_control_wmsloader'] = $ol_control;
+//    $ol_control = new stdClass();
+//    $ol_control->api_version = 1;
+//    $ol_control->machine_name = 'openlayers_control_layerloader';
+//    $ol_control->name = 'LayerLoader';
+//    $ol_control->description = 'load a WMS via Capabilities-URL and a Overlay';
+//    $ol_control->factory_service = 'openlayers.Control:LayerLoader';
+//    $ol_control->options = array();
+//    $export['openlayers_control_wmsloader'] = $ol_control;
  
     $ol_control = new stdClass();
     $ol_control->api_version = 1;

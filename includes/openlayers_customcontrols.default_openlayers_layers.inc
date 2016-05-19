@@ -23,7 +23,7 @@ function openlayers_customcontrols_default_openlayers_layers() {
         'opacity' => 0.4,
         'base' => true,
         'tree_uid' => '1',
-        'tree_group' => 'none',
+        'tree_group' => 'Basislayer',
         'tree_title' => 'WebAtlas',
         'tree_name' => 'openlayers_layer_customcontrols_bkg_webatlas_color',
         'tree_extent' => ''
@@ -45,7 +45,7 @@ function openlayers_customcontrols_default_openlayers_layers() {
         'opacity' => 1,
         'base' => true,
         'tree_uid' => '2',
-        'tree_group' => 'none',
+        'tree_group' => 'Basislayer',
         'tree_title' => 'WebAtlas (Graustufen)',
         'tree_name' => 'openlayers_layer_customcontrols_bkg_webatlas_grey',
         'tree_extent' => ''
@@ -67,7 +67,7 @@ function openlayers_customcontrols_default_openlayers_layers() {
         'opacity' => 1,
         'base' => true,
         'tree_uid' => '3',
-        'tree_group' => 'none',
+        'tree_group' => 'Basislayer',
         'tree_title' => 'DOP20',
         'tree_name' => 'openlayers_layer_customcontrols_bkg_dop20',
         'tree_extent' => ''
@@ -137,21 +137,5 @@ function openlayers_customcontrols_default_openlayers_layers() {
         'tree_extent' => '1111067.59246, 6796473.85908, 1266192.41608, 6949274.60924'
     );
     $export['openlayers_layer_customcontrols_bgr_buek200_label'] = $ol_layer;
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     return $export;
 }
