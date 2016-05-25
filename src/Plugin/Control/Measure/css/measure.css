@@ -33,15 +33,15 @@
 
 #measure-tool-activate
 {
-    bottom: 5px;
+    bottom: 60px;
     right: 5px;
     width:auto !important;
 }
 
 .measure-tool
 {
-    bottom: 5px;
-    right: 5px;
+    bottom: 0px;
+    right: 0px;
     width: auto !important;
     background: white;
 }
