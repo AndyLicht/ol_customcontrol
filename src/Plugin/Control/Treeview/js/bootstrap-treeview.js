@@ -165,10 +165,9 @@
     
     Tree.prototype.refreshInit = function()
     {
-        console.log('refreshInit');
-        console.log(this);
         Object.observe(_ol3map,this.refresh);
     }
+    
     Tree.prototype.refresh = function(changes)
     {
         changes.forEach(function(entry)
@@ -195,8 +194,6 @@
     }
     Tree.prototype.rebuild = function ()
     {
-        console.log('im Rebuild');
-        console.log(this);
         this.render();
     }
     
@@ -599,17 +596,11 @@
 	Tree.prototype.findNode = function (target) 
         {
             var nodeUid = target.closest('li.list-group-item').attr('data-nodeuid');
-            console.log('Find Node');
-            console.log(nodeUid);
             var node = null;
             this.nodes.forEach(function(entry)
             {
-                console.log("Schleife");
-                console.log(entry.uid);
-                console.log(nodeUid);
                 if(entry.uid == nodeUid)
                 {
-                    console.log(entry);
                     node = entry; 
                 }
             })
@@ -820,7 +811,7 @@
             if (state === node.state.checked) return;
             if(!node.nodes)
             {
-                console.log('einzelner node');
+                //console.log('einzelner node');
                 if (state) 
                 {
                     // Check node
