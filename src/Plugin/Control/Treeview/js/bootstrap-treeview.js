@@ -19,170 +19,374 @@
 
 ;(function ($, window, document, undefined) {
 
-	/*global jQuery, console*/
-	'use strict';
+    /*global jQuery, console*/
+    'use strict';
 
-	var pluginName = 'treeview';
+    var pluginName = 'treeview';
 
-	var _default = {};
+    var _default = {};
+
+    var _ol3map = null;
+    
+    _default.settings =
+    {
+        injectStyle: true,
+
+        levels: 2,
+
+        expandIcon: 'glyphicon glyphicon-plus',
+        collapseIcon: 'glyphicon glyphicon-minus',
+        emptyIcon: 'glyphicon',
+        nodeIcon: '',
+        selectedIcon: '',
+        checkedIcon: 'glyphicon glyphicon-check',
+        uncheckedIcon: 'glyphicon glyphicon-unchecked',
+        deleteIcon:'glyphicon glyphicon-remove',                            //H&T Neues Icon definieren
+        xmlIcon:'glyphicon glyphicon-download',                             //H&T  
+        extentIcon:'glyphicon glyphicon-log-in',                            //H&T
+        legendIcon:'glyphicon glyphicon-list',                              //H&T
+
+        color: undefined, // '#000000',
+        backColor: undefined, // '#FFFFFF',
+        borderColor: undefined, // '#dddddd',
+        onhoverColor: '#F5F5F5',
+        selectedColor: '#FFFFFF',
+        selectedBackColor: '#428bca',
+        searchResultColor: '#D9534F',
+        searchResultBackColor: undefined, //'#FFFFFF',
+
+        enableLinks: false,
+        highlightSelected: true,
+        highlightSearchResults: true,
+        showBorder: true,
+        showIcon: true,
+        showCheckbox: false,
+        showTags: false,
+        multiSelect: false,
+        showOpacity: false,                                                 //H&T Angabe ob das Icon Standardmaessig ausgeben wird (true) oder nicht (false)
+        showDeleteIcon:false,                                               //H&T
+        showXmlIcon: false,                                                 //H&T
+        showExtentIcon: false,                                              //H&T
+        showLegendIcon: false,                                              //H&T
+        ol3Map:null,                                                        //H&T
+        ol3MapType:null,                                                    //H&T
+        baseLayers:false,                                                   //H&T
+
+        // Event handlers
+        onNodeChecked: undefined,
+        onNodeCollapsed: undefined,
+        onNodeDisabled: undefined,
+        onNodeEnabled: undefined,
+        onNodeExpanded: undefined,
+        onNodeSelected: undefined,
+        onNodeUnchecked: undefined,
+        onNodeUnselected: undefined,
+        onSearchComplete: undefined,
+        onSearchCleared: undefined,
+        onNodeiconClick: undefined,                                         //H&T Neuen Event handler definieren
+        onNodeDelete:undefined                                             //H&T
+    };
+
+    _default.options = 
+    {
+        silent: false,
+        ignoreChildren: false
+    };
+
+    _default.searchOptions = 
+    {
+        ignoreCase: true,
+        exactMatch: false,
+        revealResults: true
+    };
+
+    var Tree = function (element, options)
+    {
+        this.$element = $(element);
+        this.elementId = element.id;
+        this.styleId = this.elementId + '-style';
+
+        this.init(options);
+
+        return {
+            // Options (public access)
+            options: this.options,
+
+            // Initialize / destroy methods
+            init: $.proxy(this.init, this),
+            remove: $.proxy(this.remove, this),
+
+            // Get methods
+            getNode: $.proxy(this.getNode, this),
+            getParent: $.proxy(this.getParent, this),
+            getSiblings: $.proxy(this.getSiblings, this),
+            getSelected: $.proxy(this.getSelected, this),
+            getUnselected: $.proxy(this.getUnselected, this),
+            getExpanded: $.proxy(this.getExpanded, this),
+            getCollapsed: $.proxy(this.getCollapsed, this),
+            getChecked: $.proxy(this.getChecked, this),
+            getUnchecked: $.proxy(this.getUnchecked, this),
+            getDisabled: $.proxy(this.getDisabled, this),
+            getEnabled: $.proxy(this.getEnabled, this),
+
+            // Select methods
+            //selectNode: $.proxy(this.selectNode, this),                   //H&T auskommentiert, da nicht benötigt
+            //unselectNode: $.proxy(this.unselectNode, this),               //H&T
+            //toggleNodeSelected: $.proxy(this.toggleNodeSelected, this),   //H&T
+
+            // Expand / collapse methods
+            collapseAll: $.proxy(this.collapseAll, this),
+            collapseNode: $.proxy(this.collapseNode, this),
+            expandAll: $.proxy(this.expandAll, this),
+            expandNode: $.proxy(this.expandNode, this),
+            toggleNodeExpanded: $.proxy(this.toggleNodeExpanded, this),
+            revealNode: $.proxy(this.revealNode, this),
+
+            // Expand / collapse methods
+            checkAll: $.proxy(this.checkAll, this),
+            checkNode: $.proxy(this.checkNode, this),
+            uncheckAll: $.proxy(this.uncheckAll, this),
+            uncheckNode: $.proxy(this.uncheckNode, this),
+            toggleNodeChecked: $.proxy(this.toggleNodeChecked, this),
+            nodeiconClick: $.proxy(this.nodeiconClick, this),               //H&T
+
+            // Disable / enable methods
+            disableAll: $.proxy(this.disableAll, this),
+            disableNode: $.proxy(this.disableNode, this),
+            enableAll: $.proxy(this.enableAll, this),
+            enableNode: $.proxy(this.enableNode, this),
+            toggleNodeDisabled: $.proxy(this.toggleNodeDisabled, this),
+
+            // Search methods
+            search: $.proxy(this.search, this),
+            clearSearch: $.proxy(this.clearSearch, this)
+        };
+    };
+    
+    Tree.prototype.refreshInit = function()
+    {
+        console.log('refreshInit');
+        console.log(this);
+        Object.observe(_ol3map,this.refresh);
+    }
+    Tree.prototype.refresh = function(changes)
+    {
+        changes.forEach(function(entry)
+        {
+            if(typeof entry.oldValue === 'object' && !(entry.oldValue instanceof Array))
+            {
+                if(entry.oldValue)
+                {
+                    var sizeOld = Tree.prototype.objectsize(entry.oldValue.layerStatesArray);
+                    var sizeNew = 0;
+                    var layers = _ol3map.getLayers();
+                    layers.forEach(function()
+                    {
+                        sizeNew++;
+                    });
+                    if(sizeOld < sizeNew)
+                    {
+                        $('#treeview').treeview('remove');
+                        $('#treeview').treeview({data: null,showCheckbox:true,showOpacity:true,showDeleteIcon:true,showXmlIcon:true,showExtentIcon:true,showLegendIcon:true,ol3Map:true,ol3MapType:'drupal',ol3BaseLayers:false});
+                    }
+                }
+            }  
+        });
+    }
+    Tree.prototype.rebuild = function ()
+    {
+        console.log('im Rebuild');
+        console.log(this);
+        this.render();
+    }
+    
+    Tree.prototype.objectsize = function(obj) 
+    {
+        var size = 0, key;
+        for (key in obj) 
+        {
+            if (obj.hasOwnProperty(key)) size++;
+        }
+        return size;
+    };
+    
+    Tree.prototype.isInArray = function(value, array) 
+    {
+        return array.indexOf(value) > -1;
+    };
+    
+    Tree.prototype.loadDrupalOL3Map = function(options)
+    {
+        if(options.ol3MapType === 'drupal')
+        {    
+            var id = $('.openlayers-map').attr('id');
+            _ol3map = Drupal.openlayers.getMapById(id).map;
+            this.refreshInit();
+            var layers =  _ol3map.getLayers();
+            var data = [];
+            var group = [];
+            layers.forEach(function(layer) 
+            {
+                if (options.ol3BaseLayers === true)
+                {
+                    if(this.isInArray(layer.get('tree_group'),group) === false)
+                    {
+                        group.push(layer.get('tree_group'));
+                    }
+                }
+                else
+                {
+                    if((layer.get('base') === false) && (Tree.prototype.isInArray(layer.get('tree_group'),group) === false))
+                    {
+                        group.push(layer.get('tree_group'));
+                    }
+                }
+            });
+            group.forEach(function(gr)
+            {
+                if(gr !== 'none')
+                {
+                    var grdata = 
+                    {
+                        text: gr,
+                        val:gr,
+                        selectable:false,
+                        state:
+                        {
+                            checked:false
+                        },
+                        nodes:[]
+                    };
+                }
+
+                var start_checked = 0;
+                layers.forEach(function(layer)
+                {
+                    if(layer.get('tree_group') !== 'none')
+                    {
+                        if(layer.get('tree_group') === gr)
+                        {
+                            var layerdata = [];
+                            if(layer.getVisible())
+                            {
+                                start_checked++;
+                                layerdata ={
+                                    text: layer.get('tree_title'),
+                                    val:layer.get('tree_name'),
+                                    selectable:false,
+                                    uid: layer.get('tree_uid'),
+                                    state:
+                                    {
+                                        checked:true,
+                                        opacity: layer.getOpacity()
+                                    }
+                                };
+                            }
+                            else
+                            {
+                                layerdata ={
+                                    text: layer.get('tree_title'),
+                                    val:layer.get('tree_name'),
+                                    selectable:false,
+                                    uid: layer.get('tree_uid'),
+                                    state:{
+                                        checked: false,
+                                        opacity: layer.getOpacity()
+                                    }
+                                };
+                            }
+                            grdata.nodes.push(layerdata);
+                            if(start_checked > 0)
+                            {
+                                grdata.state.checked=true;
+                            };
+                        }    
+                    }
+                    else
+                    {
+                        if(layer.get('tree_group') === gr)
+                        {
+                            var layerdata = [];
+                            if(layer.getVisible())
+                            {
+                                layerdata ={
+                                    text: layer.get('tree_title'),
+                                    val:layer.get('tree_name'),
+                                    selectable:false,
+                                    uid: layer.get('tree_uid'),
+                                    state:
+                                    {
+                                        checked:true,
+                                        opacity: layer.getOpacity()
+                                    }
+                                };
+                            }
+                            else
+                            {
+                                layerdata ={
+                                    text: layer.get('tree_title'),
+                                    val:layer.get('tree_name'),
+                                    selectable:false,
+                                    uid: layer.get('tree_uid'),
+                                    state:{
+                                        checked: false,
+                                        opacity: layer.getOpacity()
+                                    }
+                                };
+                            }
+                            data.push(layerdata);
+                        }
+                    }
+                });
+                data.push(grdata);
+            });
+            return data;
+        }
+        else
+        {
+            alert('aktuell wird Ihre OL3 Map noch nicht im Layertreeunterstüzt');
+            return null;
+        }
+    }
+
+    
+
+
+
+    Tree.prototype.init = function (options)
+    {
+        this.tree = [];
+        this.nodes = [];
+
+        if (options.data)
+        {
+            if (typeof options.data === 'string') 
+            {
+                options.data = $.parseJSON(options.data);
+            }
+            this.tree = $.extend(true, [], options.data);
+            delete options.data;
+        }
+        else if(options.ol3Map === true)
+        {
+            var mapjson = this.loadDrupalOL3Map(options);
+            this.tree = $.extend(true, [], mapjson);
+            delete options.data;
+        }
         
-        var _ol3map = null;
+        this.options = $.extend({}, _default.settings, options);
 
-	_default.settings = {
+        this.destroy();
+        this.subscribeEvents();
+        this.setInitialStates({ nodes: this.tree }, 0);
+        this.render();
+    };
 
-		injectStyle: true,
-
-		levels: 2,
-
-		expandIcon: 'glyphicon glyphicon-plus',
-		collapseIcon: 'glyphicon glyphicon-minus',
-		emptyIcon: 'glyphicon',
-		nodeIcon: '',
-		selectedIcon: '',
-		checkedIcon: 'glyphicon glyphicon-check',
-		uncheckedIcon: 'glyphicon glyphicon-unchecked',
-		deleteIcon:'glyphicon glyphicon-remove',                            //H&T Neues Icon definieren
-                xmlIcon:'glyphicon glyphicon-download',                             //H&T  
-                extentIcon:'glyphicon glyphicon-log-in',                            //H&T
-                legendIcon:'glyphicon glyphicon-list',                              //H&T
-
-		color: undefined, // '#000000',
-		backColor: undefined, // '#FFFFFF',
-		borderColor: undefined, // '#dddddd',
-		onhoverColor: '#F5F5F5',
-		selectedColor: '#FFFFFF',
-		selectedBackColor: '#428bca',
-		searchResultColor: '#D9534F',
-		searchResultBackColor: undefined, //'#FFFFFF',
-                         
-		enableLinks: false,
-		highlightSelected: true,
-		highlightSearchResults: true,
-		showBorder: true,
-		showIcon: true,
-		showCheckbox: false,
-		showTags: false,
-		multiSelect: false,
-		showOpacity: false,                                                 //H&T Angabe ob das Icon Standardmaessig ausgeben wird (true) oder nicht (false)
-		showDeleteIcon:false,                                               //H&T
-                showXmlIcon: false,                                                 //H&T
-                showExtentIcon: false,                                              //H&T
-                showLegendIcon: false,                                              //H&T
-                
-		// Event handlers
-		onNodeChecked: undefined,
-		onNodeCollapsed: undefined,
-		onNodeDisabled: undefined,
-		onNodeEnabled: undefined,
-		onNodeExpanded: undefined,
-		onNodeSelected: undefined,
-		onNodeUnchecked: undefined,
-		onNodeUnselected: undefined,
-		onSearchComplete: undefined,
-		onSearchCleared: undefined,
-		onNodeiconClick: undefined,                                         //H&T Neuen Event handler definieren
-		onNodeDelete:undefined                                              //H&T
-	};
-
-	_default.options = {
-		silent: false,
-		ignoreChildren: false
-	};
-
-	_default.searchOptions = {
-		ignoreCase: true,
-		exactMatch: false,
-		revealResults: true
-	};
-
-	var Tree = function (element, options) {
-
-		this.$element = $(element);
-		this.elementId = element.id;
-		this.styleId = this.elementId + '-style';
-
-		this.init(options);
-
-		return {
-
-			// Options (public access)
-			options: this.options,
-
-			// Initialize / destroy methods
-			init: $.proxy(this.init, this),
-			remove: $.proxy(this.remove, this),
-
-			// Get methods
-			getNode: $.proxy(this.getNode, this),
-			getParent: $.proxy(this.getParent, this),
-			getSiblings: $.proxy(this.getSiblings, this),
-			getSelected: $.proxy(this.getSelected, this),
-			getUnselected: $.proxy(this.getUnselected, this),
-			getExpanded: $.proxy(this.getExpanded, this),
-			getCollapsed: $.proxy(this.getCollapsed, this),
-			getChecked: $.proxy(this.getChecked, this),
-			getUnchecked: $.proxy(this.getUnchecked, this),
-			getDisabled: $.proxy(this.getDisabled, this),
-			getEnabled: $.proxy(this.getEnabled, this),
-
-			// Select methods
-			//selectNode: $.proxy(this.selectNode, this),                   //H&T auskommentiert, da nicht benötigt
-			//unselectNode: $.proxy(this.unselectNode, this),               //H&T
-			//toggleNodeSelected: $.proxy(this.toggleNodeSelected, this),   //H&T
-
-			// Expand / collapse methods
-			collapseAll: $.proxy(this.collapseAll, this),
-			collapseNode: $.proxy(this.collapseNode, this),
-			expandAll: $.proxy(this.expandAll, this),
-			expandNode: $.proxy(this.expandNode, this),
-			toggleNodeExpanded: $.proxy(this.toggleNodeExpanded, this),
-			revealNode: $.proxy(this.revealNode, this),
-
-			// Expand / collapse methods
-			checkAll: $.proxy(this.checkAll, this),
-			checkNode: $.proxy(this.checkNode, this),
-			uncheckAll: $.proxy(this.uncheckAll, this),
-			uncheckNode: $.proxy(this.uncheckNode, this),
-			toggleNodeChecked: $.proxy(this.toggleNodeChecked, this),
-			nodeiconClick: $.proxy(this.nodeiconClick, this),               //H&T
-
-			// Disable / enable methods
-			disableAll: $.proxy(this.disableAll, this),
-			disableNode: $.proxy(this.disableNode, this),
-			enableAll: $.proxy(this.enableAll, this),
-			enableNode: $.proxy(this.enableNode, this),
-			toggleNodeDisabled: $.proxy(this.toggleNodeDisabled, this),
-
-			// Search methods
-			search: $.proxy(this.search, this),
-			clearSearch: $.proxy(this.clearSearch, this)
-		};
-	};
-
-	Tree.prototype.init = function (options) {
-
-		this.tree = [];
-		this.nodes = [];
-                
-		if (options.data) {
-			if (typeof options.data === 'string') {
-				options.data = $.parseJSON(options.data);
-			}
-			this.tree = $.extend(true, [], options.data);
-			delete options.data;
-		}               
-		this.options = $.extend({}, _default.settings, options);
-
-		this.destroy();
-		this.subscribeEvents();
-		this.setInitialStates({ nodes: this.tree }, 0);
-		this.render();
-	};
-
-	Tree.prototype.remove = function () {
-		this.destroy();
-		$.removeData(this, pluginName);
-		$('#' + this.styleId).remove();
+	Tree.prototype.remove = function ()
+        {
+            this.destroy();
+            $.removeData(this, pluginName);
+            $('#' + this.styleId).remove();
 	};
 
 	Tree.prototype.destroy = function () {
@@ -199,8 +403,8 @@
 		this.initialized = false;
 	};
 
-	Tree.prototype.unsubscribeEvents = function () {
-
+	Tree.prototype.unsubscribeEvents = function () 
+        {
 		this.$element.off('click');
 		this.$element.off('nodeChecked');
 		this.$element.off('nodeCollapsed');
@@ -218,29 +422,26 @@
 	Tree.prototype.subscribeEvents = function () {
 
 		this.unsubscribeEvents();
-
 		this.$element.on('click', $.proxy(this.clickHandler, this));
-                this.$element.on('change', $.proxy(this.sliderHandler, this));      //H&T
-                //this.$element.slider();                                           //H&T noch verbessern!!! (Instant-Transparenzanpassung)
-
+                
 		if (typeof (this.options.onNodeChecked) === 'function') {
-			this.$element.on('nodeChecked', this.options.onNodeChecked);
+                    this.$element.on('nodeChecked', this.options.onNodeChecked);
 		}
 
 		if (typeof (this.options.onNodeCollapsed) === 'function') {
-			this.$element.on('nodeCollapsed', this.options.onNodeCollapsed);
+                    this.$element.on('nodeCollapsed', this.options.onNodeCollapsed);
 		}
 
 		if (typeof (this.options.onNodeDisabled) === 'function') {
-			this.$element.on('nodeDisabled', this.options.onNodeDisabled);
+                    this.$element.on('nodeDisabled', this.options.onNodeDisabled);
 		}
 
 		if (typeof (this.options.onNodeEnabled) === 'function') {
-			this.$element.on('nodeEnabled', this.options.onNodeEnabled);
+                    this.$element.on('nodeEnabled', this.options.onNodeEnabled);
 		}
 
 		if (typeof (this.options.onNodeExpanded) === 'function') {
-			this.$element.on('nodeExpanded', this.options.onNodeExpanded);
+                    this.$element.on('nodeExpanded', this.options.onNodeExpanded);
 		}
 
 		/*if (typeof (this.options.onNodeSelected) === 'function') {                //H&T
@@ -248,7 +449,7 @@
 		}*/
 
 		if (typeof (this.options.onNodeUnchecked) === 'function') {
-			this.$element.on('nodeUnchecked', this.options.onNodeUnchecked);
+                    this.$element.on('nodeUnchecked', this.options.onNodeUnchecked);
 		}
 
 		/*if (typeof (this.options.onNodeUnselected) === 'function') {              //H&T
@@ -256,14 +457,14 @@
 		}*/
 
 		if (typeof (this.options.onSearchComplete) === 'function') {
-			this.$element.on('searchComplete', this.options.onSearchComplete);
+                    this.$element.on('searchComplete', this.options.onSearchComplete);
 		}
 
 		if (typeof (this.options.onSearchCleared) === 'function') {
-			this.$element.on('searchCleared', this.options.onSearchCleared);
+                    this.$element.on('searchCleared', this.options.onSearchCleared);
 		}
 		if (typeof (this.options.onNodeDelete) === 'function') {                    //H&T
-			this.$element.on('nodeDelete', this.options.onNodeDelete);          //H&T
+                    this.$element.on('nodeDelete', this.options.onNodeDelete);          //H&T
 		}                                                                            
 		
 	};
@@ -281,82 +482,78 @@
 
 		var parent = node;
 		var _this = this;
-		$.each(node.nodes, function checkStates(index, node) {
+		$.each(node.nodes, function checkStates(index, node)
+                {
+                    // nodeId : unique, incremental identifier
+                    node.nodeId = _this.nodes.length;
+                    // parentId : transversing up the tree
+                    node.parentId = parent.nodeId;
+                    // if not provided set selectable default value
+                    if (!node.hasOwnProperty('selectable'))
+                    {
+                        node.selectable = true;
+                    }
 
-			// nodeId : unique, incremental identifier
-			node.nodeId = _this.nodes.length;
+                    // where provided we should preserve states
+                    node.state = node.state || {};
 
-			// parentId : transversing up the tree
-			node.parentId = parent.nodeId;
+                    // set checked state; unless set always false
+                    if (!node.state.hasOwnProperty('checked')) {
+                            node.state.checked = false;
+                    }
 
-			// if not provided set selectable default value
-			if (!node.hasOwnProperty('selectable')) {
-				node.selectable = true;
-			}
+                    // set enabled state; unless set always false
+                    if (!node.state.hasOwnProperty('disabled')) {
+                            node.state.disabled = false;
+                    }
 
-			// where provided we should preserve states
-			node.state = node.state || {};
+                    // set expanded state; if not provided based on levels
+                    if (!node.state.hasOwnProperty('expanded')) {
+                            if (!node.state.disabled &&
+                                            (level < _this.options.levels) &&
+                                            (node.nodes && node.nodes.length > 0)) {
+                                    node.state.expanded = true;
+                            }
+                            else {
+                                    node.state.expanded = false;
+                            }
+                    }
 
-			// set checked state; unless set always false
-			if (!node.state.hasOwnProperty('checked')) {
-				node.state.checked = false;
-			}
+                    // set selected state; unless set always false
+                    if (!node.state.hasOwnProperty('selected')) {
+                            node.state.selected = false;
+                    }
 
-			// set enabled state; unless set always false
-			if (!node.state.hasOwnProperty('disabled')) {
-				node.state.disabled = false;
-			}
+                    // index nodes in a flattened structure for use later
+                    _this.nodes.push(node);
 
-			// set expanded state; if not provided based on levels
-			if (!node.state.hasOwnProperty('expanded')) {
-				if (!node.state.disabled &&
-						(level < _this.options.levels) &&
-						(node.nodes && node.nodes.length > 0)) {
-					node.state.expanded = true;
-				}
-				else {
-					node.state.expanded = false;
-				}
-			}
-
-			// set selected state; unless set always false
-			if (!node.state.hasOwnProperty('selected')) {
-				node.state.selected = false;
-			}
-
-			// index nodes in a flattened structure for use later
-			_this.nodes.push(node);
-
-			// recurse child nodes and transverse the tree
-			if (node.nodes) {
-				_this.setInitialStates(node, level);
-			}
+                    // recurse child nodes and transverse the tree
+                    if (node.nodes) {
+                            _this.setInitialStates(node, level);
+                    }
 		});
 	};
-                                                                                        //H&T Start - Only created for the opacity slider
-        Tree.prototype.sliderHandler = function (event)
-        {
-            var target = $(event.target);
-            var opacity_value = target[0].value;
-            var node = this.findNode(target);
-            this.setOpacity(node.uid,opacity_value);
-        };
                                                                                  
 	Tree.prototype.clickHandler = function (event) 
         {
 		if (!this.options.enableLinks) event.preventDefault();
-                
 		var target = $(event.target);
+               
 		var node = this.findNode(target);
 		if (!node || node.state.disabled) return;
                 
 		var classList = target.attr('class') ? target.attr('class').split(' ') : [];
-		if ((classList.indexOf('expand-icon') !== -1)) {
-
-			this.toggleExpandedState(node, _default.options);
-			this.render();
+		if ((classList.indexOf('expand-icon') !== -1)) 
+                {
+                    this.toggleExpandedState(node, _default.options);
+                    this.render();
 		}
-                                                                         //H&T Start Funktion der eizelnen clickHandler!
+                else if ((classList.indexOf('opacity') !== -1))
+                {
+                    var target = $(event.target);
+                    var opacity_value = target[0].value;
+                    this.setOpacity(node.uid,opacity_value);
+                }
                 else if ((classList.indexOf('delete-icon') !== -1))
                 {
                     this.nodeDelete(node,_default.options);  
@@ -374,7 +571,7 @@
                 
                 else if ((classList.indexOf('opacity') !== -1))
                 {
-                   console.log('Opacity Click');
+                   //console.log('Opacity Click');
                 }
                 else if ((classList.indexOf('extent-icon') !== -1))
                 {
@@ -401,8 +598,21 @@
 	// data attribute nodeid, which is used to lookup the node in the flattened structure.
 	Tree.prototype.findNode = function (target) 
         {
-            var nodeId = target.closest('li.list-group-item').attr('data-nodeid');
-            var node = this.nodes[nodeId];
+            var nodeUid = target.closest('li.list-group-item').attr('data-nodeuid');
+            console.log('Find Node');
+            console.log(nodeUid);
+            var node = null;
+            this.nodes.forEach(function(entry)
+            {
+                console.log("Schleife");
+                console.log(entry.uid);
+                console.log(nodeUid);
+                if(entry.uid == nodeUid)
+                {
+                    console.log(entry);
+                    node = entry; 
+                }
+            })
             if (!node) 
             {
                 console.log('Error: node does not exist');
@@ -571,7 +781,7 @@
                     });
                 });
                 var id_in_tree = this.tree.indexOf(this.getNode(node.nodeId));
-                this.tree.remove(id_in_tree);
+                this.tree.removeNode(id_in_tree);
                 this.render();
             }
             else
@@ -585,18 +795,24 @@
                     }
                 });
                 var node_index = this.getNode(node.parentId).nodes.indexOf(node);
-                this.getNode(node.parentId).nodes.remove(node_index);
+                this.getNode(node.parentId).nodes.removeNode(node_index);
                 //Delete Parent when empty
                 if(this.getNode(node.parentId).nodes.length === 0)
                 {
                     //delete from tree
-                    this.tree.remove(this.tree.indexOf(this.getNode(node.parentId)));
+                    this.remove(this.tree.indexOf(this.getNode(node.parentId)));
                 }
                 this.render();
             }
             if (!node) return;
         }                                                                                    
-                                                                                            
+        // Array Remove - By John Resig (MIT Licensed)
+        Array.prototype.removeNode = function(from, to) 
+        {
+            var rest = this.slice((to || from) + 1 || this.length);
+            this.length = from < 0 ? this.length + from : from;
+            return this.push.apply(this, rest);
+        };                                                                                    
                                                                                             
          //Funktion erweitert, um De/Aktivierung von Nodes inklusive den dazugehörigen Layern.
 	Tree.prototype.setCheckedState = function (node, state, options) 
@@ -667,34 +883,34 @@
             }
 	};
 
-	Tree.prototype.setDisabledState = function (node, state, options) {
+	Tree.prototype.setDisabledState = function (node, state, options) 
+        {
+            if (state === node.state.disabled) return;
+            if (state) 
+            {
+                // Disable node
+                node.state.disabled = true;
 
-		if (state === node.state.disabled) return;
+                // Disable all other states
+                this.setExpandedState(node, false, options);
+                this.setSelectedState(node, false, options);
+                this.setCheckedState(node, false, options);
 
-		if (state) {
-
-			// Disable node
-			node.state.disabled = true;
-
-			// Disable all other states
-			this.setExpandedState(node, false, options);
-			this.setSelectedState(node, false, options);
-			this.setCheckedState(node, false, options);
-
-			if (!options.silent) {
-				this.$element.trigger('nodeDisabled', $.extend(true, {}, node));
-			}
-		}
-		else {
-
-			// Enabled node
-			node.state.disabled = false;
-			if (!options.silent) {
-				this.$element.trigger('nodeEnabled', $.extend(true, {}, node));
-			}
-		}
+                if (!options.silent) {
+                        this.$element.trigger('nodeDisabled', $.extend(true, {}, node));
+                }
+            }
+            else 
+            {
+                // Enabled node
+                node.state.disabled = false;
+                if (!options.silent)
+                {
+                    this.$element.trigger('nodeEnabled', $.extend(true, {}, node));
+                }
+            }
 	};
-
+       
 	Tree.prototype.render = function () 
         {                                                                                   //H&T End
             if (!this.initialized)
@@ -729,6 +945,7 @@
 				.addClass(node.state.selected ? 'node-selected' : '')
 				.addClass(node.searchResult ? 'search-result' : '') 
 				.attr('data-nodeid', node.nodeId)
+                                .attr('data-nodeuid',node.uid)  //add by Tim
 				.attr('style', _this.buildStyleOverride(node))
                                 .addClass(node.parentId === undefined ? 'parent' : 'child')        //H&T add child/parent
                                 
@@ -956,13 +1173,13 @@
 	};
 
 	Tree.prototype.template = {
-		list: '<ul class="list-group"></ul>',
-		item: '<li class="list-group-item"></li>',
-		indent: '<span class="indent"></span>',
-		icon: '<span class="icon"></span>',
-		link: '<a href="#" style="color:inherit;"></a>',
-		badge: '<span class="badge"></span>',
-		slider:function(opacity){return '<span class="badge"><input class="opacity" type="range"  min ="0" max="100" step ="1" value="'+opacity*100+'"/></span>';}, //H&T
+            list: '<ul class="list-group"></ul>',
+            item: '<li class="list-group-item"></li>',
+            indent: '<span class="indent"></span>',
+            icon: '<span class="icon"></span>',
+            link: '<a href="#" style="color:inherit;"></a>',
+            badge: '<span class="badge"></span>',
+            slider:function(opacity){return '<span class="badge"><input class="opacity" type="range"  min ="0" max="100" step ="1" value="'+opacity*100+'"/></span>';}, //H&T
 	};
 
 	Tree.prototype.css = '.treeview .list-group-item{cursor:pointer}.treeview span.indent{margin-left:10px;margin-right:10px}.treeview span.icon{width:12px;margin-right:5px}.treeview .node-disabled{color:silver;cursor:not-allowed}'
@@ -1351,9 +1568,10 @@
 		this.forEachIdentifier(identifiers, options, $.proxy(function (node, options) {
 			this.setDisabledState(node, false, options);
 		}, this));
-
 		this.render();
 	};
+        
+        
 
 	/**
 		Toggles a nodes disabled state; disabling is enabled, enabling if disabled.
@@ -1568,11 +1786,6 @@
 		return result || this;
 	};
 
-    // Array Remove - By John Resig (MIT Licensed)
-    Array.prototype.remove = function(from, to) 
-    {
-        var rest = this.slice((to || from) + 1 || this.length);
-        this.length = from < 0 ? this.length + from : from;
-        return this.push.apply(this, rest);
-    };
+
+    
 })(jQuery, window, document);

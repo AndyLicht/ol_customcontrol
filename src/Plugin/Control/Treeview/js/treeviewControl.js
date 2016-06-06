@@ -588,7 +588,7 @@ Object.observe || (function(O, A, root, _undefined) {
         var options = opt_options || {};
         var this_ = this;
         var tipLabel = 'LayerTree';
-        var layertree = this_.buildlayertree(ol3_map,false);
+        //var layertree = this_.buildlayertree(ol3_map,false);
         
         this.hiddenClassName = 'ol-unselectable ol-control layer-layertree';
         this.shownClassName = this.hiddenClassName + ' shown';
@@ -608,10 +608,9 @@ Object.observe || (function(O, A, root, _undefined) {
         var dialog = document.createElement('div');
         dialog.id = 'legendendialog';
         document.body.appendChild(dialog);
-        Object.observe(ol3_map,this_.layerchanges);
         window.onload = function ()
         {
-            $('#treeview').treeview({data: layertree,showCheckbox:true,showOpacity:true,showDeleteIcon:true,showXmlIcon:true,showExtentIcon:true,showLegendIcon:true,olMap:ol3_map});
+           $('#treeview').treeview({data: null,showSlider:true,showCheckbox:true,showOpacity:true,showDeleteIcon:true,showXmlIcon:true,showExtentIcon:true,showLegendIcon:true,ol3Map:true,ol3MapType:'drupal',ol3BaseLayers:false});
         }
        
         var layertree_shown = false;
@@ -652,171 +651,5 @@ Object.observe || (function(O, A, root, _undefined) {
             this.element.className = this.hiddenClassName;
         }
     };
-
-    ol.control.treeviewControl.prototype.isInArray = function(value, array) 
-    {
-        return array.indexOf(value) > -1;
-    };
-    
-    ol.control.treeviewControl.prototype.buildlayertree = function (ol3_map,withBaseLayers)
-    {   
-        var layers =  ol3_map.getLayers();
-        var data = [];
-        var group = [];
-        layers.forEach(function(layer) 
-        {
-            if (withBaseLayers === true)
-            {
-                if(ol.control.treeviewControl.prototype.isInArray(layer.get('tree_group'),group) === false)
-                {
-                    group.push(layer.get('tree_group'));
-                }
-            }
-            else
-            {
-                if((layer.get('base') === false) && (ol.control.treeviewControl.prototype.isInArray(layer.get('tree_group'),group) === false))
-                {
-                    group.push(layer.get('tree_group'));
-                }
-            }
-        });
-        group.forEach(function(gr)
-        {
-            if(gr !== 'none')
-            {
-                var grdata = 
-                {
-                    text: gr,
-                    val:gr,
-                    selectable:false,
-                    state:
-                    {
-                        checked:false
-                    },
-                    nodes:[]
-                };
-            }
-
-            var start_checked = 0;
-            layers.forEach(function(layer)
-            {
-                if(layer.get('tree_group') !== 'none')
-                {
-                    if(layer.get('tree_group') === gr)
-                    {
-                        var layerdata = [];
-                        if(layer.getVisible())
-                        {
-                            start_checked++;
-                            layerdata ={
-                                text: layer.get('tree_title'),
-                                val:layer.get('tree_name'),
-                                selectable:false,
-                                uid: layer.get('tree_uid'),
-                                state:
-                                {
-                                    checked:true,
-                                    opacity: layer.getOpacity()
-                                }
-                            };
-                        }
-                        else
-                        {
-                            layerdata ={
-                                text: layer.get('tree_title'),
-                                val:layer.get('tree_name'),
-                                selectable:false,
-                                uid: layer.get('tree_uid'),
-                                state:{
-                                    checked: false,
-                                    opacity: layer.getOpacity()
-                                }
-                            };
-                        }
-                        grdata.nodes.push(layerdata);
-                        if(start_checked > 0)
-                        {
-                            grdata.state.checked=true;
-                        };
-                    }    
-                }
-                else
-                {
-                    if(layer.get('tree_group') === gr)
-                    {
-                        var layerdata = [];
-                        if(layer.getVisible())
-                        {
-                            layerdata ={
-                                text: layer.get('tree_title'),
-                                val:layer.get('tree_name'),
-                                selectable:false,
-                                uid: layer.get('tree_uid'),
-                                state:
-                                {
-                                    checked:true,
-                                    opacity: layer.getOpacity()
-                                }
-                            };
-                        }
-                        else
-                        {
-                            layerdata ={
-                                text: layer.get('tree_title'),
-                                val:layer.get('tree_name'),
-                                selectable:false,
-                                uid: layer.get('tree_uid'),
-                                state:{
-                                    checked: false,
-                                    opacity: layer.getOpacity()
-                                }
-                            };
-                        }
-                        data.push(layerdata);
-                    }
-                }
-            });
-            data.push(grdata);
-        });
-        console.log(data);
-        return data;
-    };  
-    
-    
-     ol.control.treeviewControl.prototype.layerchanges = function (changes)
-    {
-        var id = $('.openlayers-map').attr('id');
-        var map = Drupal.openlayers.getMapById(id).map;
-        changes.forEach(function(entry)
-        {      
-            if(typeof entry.oldValue === 'object' && !(entry.oldValue instanceof Array))
-            {
-                if(entry.oldValue)
-                {
-                    var sizeOld = Object.size(entry.oldValue.layerStatesArray);
-                    //var sizeNew = Object.size(entry.object.f.layerStatesArray);
-                    var sizeNew = 0;
-                    var layers = map.getLayers();
-                    layers.forEach(function(layer)
-                    {
-                        sizeNew++;
-                    })
-                    if(sizeOld < sizeNew)
-                    {
-                        newlayertree = ol.control.treeviewControl.prototype.buildlayertree(map,false);
-                        $('#treeview').treeview({data: newlayertree,showCheckbox:true,showOpacity:true,showDeleteIcon:true,showXmlIcon:true,showExtentIcon:true,showLegendIcon:true,olMap:map});
-                    }
-                }
-            }
-        });
-    };  
-    
-    Object.size = function(obj) {
-    var size = 0, key;
-    for (key in obj) {
-        if (obj.hasOwnProperty(key)) size++;
-    }
-    return size;
-};
 })(jQuery);
 
